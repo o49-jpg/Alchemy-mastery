@@ -1,0 +1,356 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UIS = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local remote = ReplicatedStorage:WaitForChild("AlchemistEvent")
+
+local ingredients = {
+    {"Autumn Sprout", 119546741668519},
+    {"Blood Rose", 70514077027413},
+    {"Blue Crystal", 80158544114412},
+    {"Dark Root", 135498624114687},
+    {"Dire Flower", 87351307983551},
+    {"Elder Wood", 129519838136424},
+    {"Fire Flower", 128773696627310},
+    {"Glowing Mushroom", 118355004983554},
+    {"Hazel Lily", 124388374281686},
+    {"Jade Stone", 139624894862729},
+    {"Lamp Grass", 87351307983551},
+    {"Mushroom", 82145102991942},
+    {"Plane Flower", 106402873796872},
+    {"Red Crystal", 85947331092293},
+    {"Wild Vine", 95686533322548},
+    {"Winter Rose", 134683266460242}
+}
+
+local holdTime = 1
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "AlchemyBookGui"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Size = UDim2.new(0, 100, 0, 40)
+toggleBtn.Position = UDim2.new(0, 10, 1, -50)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+toggleBtn.TextColor3 = Color3.new(1, 1, 1)
+toggleBtn.TextScaled = true
+toggleBtn.Text = "Open"
+toggleBtn.ZIndex = 10
+toggleBtn.Parent = gui
+
+local bookFrame = Instance.new("Frame")
+bookFrame.Size = UDim2.new(0.8, 0, 0.8, 0)
+bookFrame.Position = UDim2.new(0.1, 0, 0.1, 0)
+bookFrame.BackgroundColor3 = Color3.fromRGB(240, 230, 210)
+bookFrame.Visible = false
+bookFrame.ClipsDescendants = true
+bookFrame.Parent = gui
+
+local pagesHolder = Instance.new("Frame")
+pagesHolder.Size = UDim2.new(6, 0, 1, 0)
+pagesHolder.Position = UDim2.new(0, 0, 0, 0)
+pagesHolder.BackgroundTransparency = 1
+pagesHolder.Parent = bookFrame
+
+local function createPage()
+    local page = Instance.new("Frame")
+    page.Size = UDim2.new(1/6, 0, 1, 0)
+    page.BackgroundTransparency = 1
+    page.Parent = pagesHolder
+    return page
+end
+
+-- Create pages
+local page1 = createPage()
+local page2 = createPage()
+local page3 = createPage()
+local page4 = createPage()
+local page5 = createPage()
+local page6 = createPage()
+
+-- Arrange pages horizontally
+for i, page in ipairs(pagesHolder:GetChildren()) do
+    if page:IsA("Frame") then
+        page.Position = UDim2.new((i - 1) / 6, 0, 0, 0)
+    end
+end
+
+-- PAGE 1: image only
+local img1 = Instance.new("ImageLabel")
+img1.Size = UDim2.new(1, 0, 1, 0)
+img1.Position = UDim2.new(0, 0, 0, 0)
+img1.BackgroundTransparency = 1
+img1.Image = "rbxassetid://88587078675369"
+img1.Parent = page1
+
+-- PAGE 2: ingredients + Unequip All + scroll
+local unequipBtn = Instance.new("TextButton")
+unequipBtn.Size = UDim2.new(1, 0, 0, 40)
+unequipBtn.BackgroundColor3 = Color3.fromRGB(180, 80, 80)
+unequipBtn.TextColor3 = Color3.new(1,1,1)
+unequipBtn.TextScaled = true
+unequipBtn.Text = "Unequip All Items"
+unequipBtn.Parent = page2
+
+unequipBtn.MouseButton1Click:Connect(function()
+    remote:FireServer("UnEquipItems")
+end)
+
+local scrollFrame = Instance.new("ScrollingFrame")
+scrollFrame.Size = UDim2.new(1, 0, 1, -45)
+scrollFrame.Position = UDim2.new(0, 0, 0, 45)
+scrollFrame.BackgroundTransparency = 1
+scrollFrame.ScrollBarThickness = 8
+scrollFrame.CanvasSize = UDim2.new(0, 0, #ingredients * 0.1, 0)
+scrollFrame.Parent = page2
+
+local listLayout = Instance.new("UIListLayout")
+listLayout.Padding = UDim.new(0, 5)
+listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+listLayout.Parent = scrollFrame
+
+for _, data in ipairs(ingredients) do
+    local name, imageId = data[1], data[2]
+
+    local row = Instance.new("Frame")
+    row.Size = UDim2.new(1, -10, 0, 60)
+    row.BackgroundTransparency = 1
+    row.Parent = scrollFrame
+
+    local icon = Instance.new("ImageLabel")
+    icon.Size = UDim2.new(0, 50, 0, 50)
+    icon.BackgroundTransparency = 1
+    icon.Image = "rbxassetid://" .. imageId
+    icon.Parent = row
+
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -60, 0, 50)
+    btn.Position = UDim2.new(0, 60, 0, 0)
+    btn.Text = 'Give "' .. name .. '"'
+    btn.TextScaled = true
+    btn.BackgroundColor3 = Color3.fromRGB(200, 150, 150)
+    btn.Parent = row
+
+    local progressBg = Instance.new("Frame")
+    progressBg.Size = UDim2.new(1, 0, 0, 4)
+    progressBg.Position = UDim2.new(0, 60, 1, -4)
+    progressBg.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+    progressBg.BackgroundTransparency = 0.6
+    progressBg.Parent = row
+
+    local progressFill = Instance.new("Frame")
+    progressFill.Size = UDim2.new(0, 0, 1, 0)
+    progressFill.BackgroundColor3 = Color3.fromRGB(50, 200, 255)
+    progressFill.Parent = progressBg
+
+    local holding = false
+    local holdStart = 0
+
+    local function resetProgress()
+        holding = false
+        progressFill:TweenSize(UDim2.new(0, 0, 1, 0), "Out", "Sine", 0.2, true)
+    end
+
+    btn.MouseButton1Down:Connect(function()
+        if holding then return end
+        holding = true
+        holdStart = tick()
+
+        spawn(function()
+            while holding do
+                local elapsed = tick() - holdStart
+                local progress = math.clamp(elapsed / holdTime, 0, 1)
+                progressFill.Size = UDim2.new(progress, 0, 1, 0)
+                if progress >= 1 then
+                    remote:FireServer("EquipItem", name)
+                    holding = false
+                    progressFill:TweenSize(UDim2.new(0, 0, 1, 0), "Out", "Sine", 0.3, true)
+                    break
+                end
+                wait(0.03)
+            end
+        end)
+    end)
+
+    btn.MouseButton1Up:Connect(function()
+        if holding then
+            local elapsed = tick() - holdStart
+            if elapsed < holdTime then
+                remote:FireServer("AddItem", name)
+            end
+            resetProgress()
+        end
+    end)
+
+    btn.MouseLeave:Connect(resetProgress)
+end
+
+-- PAGE 3: Abilities
+local abilityRemote = ReplicatedStorage:WaitForChild("AlchemistEvent")
+local eraseRemote = ReplicatedStorage:WaitForChild("Erase")
+local generalAbilityRemote = ReplicatedStorage:WaitForChild("GeneralAbility")
+local counterRemote = ReplicatedStorage:WaitForChild("Counter")
+local magnetRemote = ReplicatedStorage:WaitForChild("MagnetS")
+local generalHitRemote = ReplicatedStorage:WaitForChild("GeneralHit")
+
+local abilityData = {
+    {Name = "Bring", Remote = eraseRemote, Args = {}},
+    {Name = "Universal Use", Remote = generalAbilityRemote, Args = {}},
+    {Name = "Counter", Remote = counterRemote, Args = {}},
+    {Name = "Home", Remote = generalAbilityRemote, Args = {CFrame.new(3.1339, -8.0728, -2.9382, -4.9e-09, -0.5104, 0.8599, 1, -6.1e-08, -3e-08, 6.8e-08, 0.8599, 0.5104)}},
+    {Name = "Magnetize", Remote = magnetRemote, Args = {}},
+    {Name = "Punch", Remote = generalHitRemote, Args = "PUNCH_SPECIAL"}
+}
+
+local btnHeight = 50
+local padding = 5
+
+local function createAbilityButton(name, parent)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -20, 0, btnHeight)
+    btn.Position = UDim2.new(0, 10, 0, 0)
+    btn.BackgroundColor3 = Color3.fromRGB(100, 150, 255)
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.TextScaled = true
+    btn.Text = name
+    btn.Parent = parent
+    return btn
+end
+
+local layout3 = Instance.new("UIListLayout")
+layout3.Padding = UDim.new(0, padding)
+layout3.SortOrder = Enum.SortOrder.LayoutOrder
+layout3.Parent = page3
+
+for i, ability in ipairs(abilityData) do
+    local btn = createAbilityButton(ability.Name, page3)
+    btn.LayoutOrder = i
+
+    if ability.Name ~= "Punch" then
+        btn.MouseButton1Click:Connect(function()
+            if #ability.Args == 0 then
+                ability.Remote:FireServer()
+            else
+                ability.Remote:FireServer(unpack(ability.Args))
+            end
+        end)
+    else
+        btn.MouseButton1Click:Connect(function()
+            local char = player.Character
+            if not char then return end
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            local humanoid = char:FindFirstChildOfClass("Humanoid")
+            if not hrp or not humanoid then return end
+
+            -- Play punch animation
+            local anim = Instance.new("Animation")
+            anim.AnimationId = "rbxassetid://109511274923523"
+            local track = humanoid:LoadAnimation(anim)
+            track:Play()
+
+            task.wait(track.Length or 1)
+
+            -- Punch hitbox
+            local hitbox = Instance.new("Part")
+            hitbox.Size = Vector3.new(7,7,7)
+            hitbox.CFrame = hrp.CFrame * CFrame.new(0, 0, -5)
+            hitbox.Anchored = true
+            hitbox.CanCollide = false
+            hitbox.Transparency = 0.5
+            hitbox.BrickColor = BrickColor.new("Bright blue")
+            hitbox.Parent = workspace
+
+            local touchedPlayers = {}
+
+            for _, otherPlayer in pairs(Players:GetPlayers()) do
+                if otherPlayer ~= player and otherPlayer.Character and otherPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    local otherHRP = otherPlayer.Character.HumanoidRootPart
+                    local relativePos = hitbox.CFrame:PointToObjectSpace(otherHRP.Position)
+                    local size = hitbox.Size/2
+                    if math.abs(relativePos.X) <= size.X and math.abs(relativePos.Y) <= size.Y and math.abs(relativePos.Z) <= size.Z then
+                        touchedPlayers[otherPlayer] = true
+                    end
+                end
+            end
+
+            for plr, _ in pairs(touchedPlayers) do
+                local targetHRP = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+                if targetHRP then
+                    ability.Remote:FireServer("GeneralHit", targetHRP)
+                end
+            end
+
+            task.delay(0.5, function()
+                hitbox:Destroy()
+            end)
+        end)
+    end
+end
+
+-- PAGE 4 to 6: placeholders
+for i = 4, 6 do
+    local page = pagesHolder:GetChildren()[i]
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Color3.fromRGB(100,100,100)
+    label.TextScaled = true
+    label.Text = "Page "..i.." - Coming Soon"
+    label.Parent = page
+end
+
+-- Current page variable
+local currentPage = 1
+
+-- Create left arrow button
+local leftArrow = Instance.new("TextButton")
+leftArrow.Size = UDim2.new(0, 40, 0, 80)
+leftArrow.Position = UDim2.new(0, 5, 0.5, -40)
+leftArrow.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+leftArrow.Text = "<"
+leftArrow.TextScaled = true
+leftArrow.TextColor3 = Color3.new(1,1,1)
+leftArrow.Parent = bookFrame
+
+-- Create right arrow button
+local rightArrow = Instance.new("TextButton")
+rightArrow.Size = UDim2.new(0, 40, 0, 80)
+rightArrow.Position = UDim2.new(1, -45, 0.5, -40)
+rightArrow.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+rightArrow.Text = ">"
+rightArrow.TextScaled = true
+rightArrow.TextColor3 = Color3.new(1,1,1)
+rightArrow.Parent = bookFrame
+
+local pageWidth = bookFrame.AbsoluteSize.X
+
+local function updatePage(newPage)
+    if newPage < 1 then newPage = 1 end
+    if newPage > 6 then newPage = 6 end
+    if newPage == currentPage then return end
+    currentPage = newPage
+    pagesHolder.Position = UDim2.new(0, -pageWidth * (currentPage - 1), 0, 0)
+end
+
+leftArrow.MouseButton1Click:Connect(function()
+    updatePage(currentPage - 1)
+end)
+
+rightArrow.MouseButton1Click:Connect(function()
+    updatePage(currentPage + 1)
+end)
+
+-- Update pageWidth on resize for perfect snapping
+bookFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+    pageWidth = bookFrame.AbsoluteSize.X
+    updatePage(currentPage)
+end)
+
+-- Open/Close toggle
+toggleBtn.MouseButton1Click:Connect(function()
+    bookFrame.Visible = not bookFrame.Visible
+    toggleBtn.Text = bookFrame.Visible and "Close" or "Open"
+end)

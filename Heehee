@@ -200,8 +200,22 @@ local abilityData = {
     {Name = "Bring", Remote = eraseRemote, Args = {}},
     {Name = "Universal Use", Remote = generalAbilityRemote, Args = {}},
     {Name = "Counter", Remote = counterRemote, Args = {}},
-    {Name = "Home", Remote = generalAbilityRemote, Args = {CFrame.new(3.1339, -8.0728, -2.9382, -4.9e-09, -0.5104, 0.8599, 1, -6.1e-08, -3e-08, 6.8e-08, 0.8599, 0.5104)}},
+    {Name = "Home", Remote = generalAbilityRemote, Args = {
+        CFrame.new(3.1339, -8.0728, -2.9382, -4.9e-09, -0.5104, 0.8599, 1, -6.1e-08, -3e-08, 6.8e-08, 0.8599, 0.5104)
+    }},
     {Name = "Magnetize", Remote = magnetRemote, Args = {}},
+
+    -- 🔹 New abilities added here
+    {Name = "Meteors", Remote = generalAbilityRemote, Args = {24.249999960884452, 1.2224999985657632}},
+    {Name = "Office", Remote = generalAbilityRemote, Args = {
+        CFrame.new(
+            -7.82344913482666, -7.872852802276611, 28.03083038330078,
+            -0.34991878271102905, -0.9367800354957581, -1.5360368976757854e-08,
+            -5.6760427469271235e-08, 4.804939113256523e-09, 1,
+            -0.9367800354957581, 0.34991878271102905, -5.485337339905527e-08
+        )
+    }},
+
     {Name = "Punch", Remote = generalHitRemote, Args = "PUNCH_SPECIAL"}
 }
 
@@ -225,6 +239,46 @@ layout3.Padding = UDim.new(0, padding)
 layout3.SortOrder = Enum.SortOrder.LayoutOrder
 layout3.Parent = page3
 
+-- Punch Modes with ClickDetectors
+local punchModes = {
+    {
+        Name = "Normal",
+        Remote = generalHitRemote,
+        AnimationId = "rbxassetid://109511274923523",
+        HitboxColor = Color3.fromRGB(255,0,0),
+        GetTarget = function(plr)
+            return plr.Character and (plr.Character:FindFirstChild("Torso") or plr.Character:FindFirstChild("UpperTorso"))
+        end,
+        ExtraArgs = {},
+        ClickDetector = workspace:WaitForChild("Lobby"):WaitForChild("Default"):WaitForChild("ClickDetector")
+    },
+    {
+        Name = "Critical",
+        Remote = generalHitRemote,
+        AnimationId = "rbxassetid://133068451086106",
+        HitboxColor = Color3.fromRGB(0,0,255),
+        GetTarget = function(plr)
+            return plr.Character and plr.Character:FindFirstChild("Head")
+        end,
+        ExtraArgs = {true},
+        ClickDetector = workspace:WaitForChild("Lobby"):WaitForChild("Glovel"):WaitForChild("ClickDetector")
+    },
+    {
+        Name = "Nightmare",
+        Remote = ReplicatedStorage:WaitForChild("nightmarehit"),
+        AnimationId = "rbxassetid://116559255414365",
+        HitboxColor = Color3.fromRGB(128,0,128),
+        GetTarget = function(plr)
+            return plr.Character and (plr.Character:FindFirstChild("Right Arm") or plr.Character:FindFirstChild("RightUpperArm"))
+        end,
+        ExtraArgs = {},
+        ClickDetector = workspace:WaitForChild("Lobby"):WaitForChild("Nightmare"):WaitForChild("ClickDetector")
+    }
+}
+
+local currentModeIndex = 1
+
+-- Replace Punch button logic
 for i, ability in ipairs(abilityData) do
     local btn = createAbilityButton(ability.Name, page3)
     btn.LayoutOrder = i
@@ -238,38 +292,74 @@ for i, ability in ipairs(abilityData) do
             end
         end)
     else
-        btn.MouseButton1Click:Connect(function()
+        local holding = false
+        local holdStart = 0
+
+        btn.MouseButton1Down:Connect(function()
+            if holding then return end
+            holding = true
+            holdStart = tick()
+
+            spawn(function()
+                while holding do
+                    local elapsed = tick() - holdStart
+                    if elapsed >= 0.5 then
+                        -- Switch punch mode
+                        currentModeIndex = currentModeIndex % #punchModes + 1
+                        local mode = punchModes[currentModeIndex]
+                        btn.Text = "Punch ("..mode.Name..")"
+
+                        -- Fire corresponding ClickDetector
+                        if mode.ClickDetector then
+                            mode.ClickDetector:FireClick(player)
+                        end
+
+                        holding = false
+                        break
+                    end
+                    task.wait(0.05)
+                end
+            end)
+        end)
+
+        btn.MouseButton1Up:Connect(function()
+            if not holding then return end
+            holding = false
+
             local char = player.Character
             if not char then return end
             local hrp = char:FindFirstChild("HumanoidRootPart")
             local humanoid = char:FindFirstChildOfClass("Humanoid")
             if not hrp or not humanoid then return end
 
-            -- Play punch animation
+            local mode = punchModes[currentModeIndex]
+
+            -- Play mode animation
             local anim = Instance.new("Animation")
-            anim.AnimationId = "rbxassetid://109511274923523"
+            anim.AnimationId = mode.AnimationId
             local track = humanoid:LoadAnimation(anim)
             track:Play()
 
-            task.wait(track.Length or 1)
+            task.wait(0.2) -- sync swing
 
-            -- Punch hitbox
+            -- Hitbox
             local hitbox = Instance.new("Part")
-            hitbox.Size = Vector3.new(7,7,7)
-            hitbox.CFrame = hrp.CFrame * CFrame.new(0, 0, -5)
+            hitbox.Size = Vector3.new(7, 4, 7)
+            hitbox.CFrame = hrp.CFrame * CFrame.new(0,0,-4)
             hitbox.Anchored = true
             hitbox.CanCollide = false
-            hitbox.Transparency = 0.5
-            hitbox.BrickColor = BrickColor.new("Bright blue")
+            hitbox.Color = mode.HitboxColor
+            hitbox.Transparency = 0.57
+            hitbox.Material = Enum.Material.Neon
             hitbox.Parent = workspace
 
+            -- Detect players
             local touchedPlayers = {}
-
             for _, otherPlayer in pairs(Players:GetPlayers()) do
                 if otherPlayer ~= player and otherPlayer.Character and otherPlayer.Character:FindFirstChild("HumanoidRootPart") then
                     local otherHRP = otherPlayer.Character.HumanoidRootPart
                     local relativePos = hitbox.CFrame:PointToObjectSpace(otherHRP.Position)
-                    local size = hitbox.Size/2
+                    local size = hitbox.Size / 2
                     if math.abs(relativePos.X) <= size.X and math.abs(relativePos.Y) <= size.Y and math.abs(relativePos.Z) <= size.Z then
                         touchedPlayers[otherPlayer] = true
                     end
@@ -277,16 +367,23 @@ for i, ability in ipairs(abilityData) do
             end
 
             for plr, _ in pairs(touchedPlayers) do
-                local targetHRP = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
-                if targetHRP then
-                    ability.Remote:FireServer("GeneralHit", targetHRP)
+                local target = mode.GetTarget(plr)
+                if target then
+                    mode.Remote:FireServer(target, unpack(mode.ExtraArgs))
                 end
             end
 
-            task.delay(0.5, function()
-                hitbox:Destroy()
+            task.delay(0.3, function()
+                if hitbox then hitbox:Destroy() end
             end)
         end)
+    end
+end
+
+-- Set initial button text
+for _, child in ipairs(page3:GetChildren()) do
+    if child:IsA("TextButton") and child.Text:match("Punch") then
+        child.Text = "Punch ("..punchModes[currentModeIndex].Name..")"
     end
 end
 

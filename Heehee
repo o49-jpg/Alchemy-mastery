@@ -200,9 +200,15 @@ local abilityData = {
     {Name = "Bring", Remote = eraseRemote, Args = {}},
     {Name = "Universal Use", Remote = generalAbilityRemote, Args = {}},
     {Name = "Counter", Remote = counterRemote, Args = {}},
+
+    -- 🔹 Updated Home
     {Name = "Home", Remote = generalAbilityRemote, Args = {
-        CFrame.new(3.1339, -8.0728, -2.9382, -4.9e-09, -0.5104, 0.8599, 1, -6.1e-08, -3e-08, 6.8e-08, 0.8599, 0.5104)
+        CFrame.new(-202.87875366210938, -8.178178787231445, 32.40607833862305, 
+        2.824716460736454e-08, 0.6479030251502991, 0.7617228031158447, 
+        1, -3.19221378219936e-08, -9.931058642109747e-09, 
+        1.7881456315649302e-08, 0.7617228031158447, -0.6479030251502991)
     }},
+
     {Name = "Magnetize", Remote = magnetRemote, Args = {}},
 
     -- 🔹 New abilities added here
@@ -214,6 +220,14 @@ local abilityData = {
             -5.6760427469271235e-08, 4.804939113256523e-09, 1,
             -0.9367800354957581, 0.34991878271102905, -5.485337339905527e-08
         )
+    }},
+
+    -- 🔹 New Organization button
+    {Name = "Organization", Remote = generalAbilityRemote, Args = {
+        CFrame.new(-220.17852783203125, -7.778176307678223, -34.88572311401367, 
+        0.02872084081172943, 1.505584812377947e-08, 0.9995874762535095, 
+        -1.5925047947007442e-08, 1, -1.460449272627784e-08, 
+        -0.9995874762535095, -1.549902428621408e-08, 0.02872084081172943)
     }},
 
     {Name = "Punch", Remote = generalHitRemote, Args = "PUNCH_SPECIAL"}

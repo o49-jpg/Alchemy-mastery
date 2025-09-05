@@ -401,17 +401,48 @@ for _, child in ipairs(page3:GetChildren()) do
     end
 end
 
--- PAGE 4 to 6: placeholders
-for i = 4, 6 do
-    local page = pagesHolder:GetChildren()[i]
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 1, 0)
-    label.BackgroundTransparency = 1
-    label.TextColor3 = Color3.fromRGB(100,100,100)
-    label.TextScaled = true
-    label.Text = "Page "..i.." - Coming Soon"
-    label.Parent = page
-end
+-- PAGE 4: Nice Cut G' + Timestop
+local page4 = pagesHolder:GetChildren()[4]
+
+local layout4 = Instance.new("UIListLayout")
+layout4.Padding = UDim.new(0, 10)
+layout4.SortOrder = Enum.SortOrder.LayoutOrder
+layout4.Parent = page4
+
+-- Nice Cut G'
+local niceCutBtn = Instance.new("TextButton")
+niceCutBtn.Size = UDim2.new(1, -20, 0, 60)
+niceCutBtn.Position = UDim2.new(0, 10, 0, 0)
+niceCutBtn.BackgroundColor3 = Color3.fromRGB(150, 80, 150)
+niceCutBtn.TextColor3 = Color3.new(1, 1, 1)
+niceCutBtn.TextScaled = true
+niceCutBtn.Text = "Nice Cut G'"
+niceCutBtn.Parent = page4
+
+niceCutBtn.MouseButton1Click:Connect(function()
+	local args = {
+		Players:WaitForChild("Fixa1108").Character:WaitForChild("Torso")
+	}
+	ReplicatedStorage:WaitForChild("Godshand"):FireServer(unpack(args))
+end)
+
+-- Timestop
+local timestopBtn = Instance.new("TextButton")
+timestopBtn.Size = UDim2.new(1, -20, 0, 60)
+timestopBtn.Position = UDim2.new(0, 10, 0, 0)
+timestopBtn.BackgroundColor3 = Color3.fromRGB(80, 30, 30)
+timestopBtn.TextColor3 = Color3.new(1, 1, 1)
+timestopBtn.TextScaled = true
+timestopBtn.Text = "Timestop"
+timestopBtn.Parent = page4
+
+timestopBtn.MouseButton1Click:Connect(function()
+	ReplicatedStorage:WaitForChild("TimestopJump"):FireServer()
+	task.wait(0.1)
+	ReplicatedStorage:WaitForChild("Timestopchoir"):FireServer()
+	task.wait(1.7)
+	ReplicatedStorage:WaitForChild("Timestop"):FireServer()
+end)
 
 -- Current page variable
 local currentPage = 1

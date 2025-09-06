@@ -444,30 +444,60 @@ timestopBtn.MouseButton1Click:Connect(function()
 	ReplicatedStorage:WaitForChild("Timestop"):FireServer()
 end)
 
--- Dismantle
-local dismantleBtn = Instance.new("TextButton")
-dismantleBtn.Size = UDim2.new(1, -20, 0, 60)
-dismantleBtn.Position = UDim2.new(0, 10, 0, 0)
-dismantleBtn.BackgroundColor3 = Color3.fromRGB(120, 50, 50)
-dismantleBtn.TextColor3 = Color3.new(1, 1, 1)
-dismantleBtn.TextScaled = true
-dismantleBtn.Text = "Dismantle"
-dismantleBtn.Parent = page4
+-- Dismantle (dynamic CFrame at your position & facing)
+do
+    local layout4 = Instance.new("UIListLayout")
+    layout4.Padding = UDim.new(0, 8)
+    layout4.SortOrder = Enum.SortOrder.LayoutOrder
+    layout4.Parent = page4
 
-dismantleBtn.MouseButton1Click:Connect(function()
-	local char = LocalPlayer.Character
-	if not char then return end
-	local hrp = char:FindFirstChild("HumanoidRootPart")
-	if not hrp then return end
+    -- use game's vector.create if it exists; otherwise fall back to Vector3.new
+    local vector_create = (vector and vector.create) or Vector3.new
 
-	-- Slash always in the direction player is facing
-	local args = {
-		"slash",
-		hrp.CFrame, -- where you are facing
-		Vector3.new(0, hrp.Orientation.Y, 0) -- matches your facing angle
-	}
-	ReplicatedStorage:WaitForChild("Slicer"):FireServer(unpack(args))
-end)
+    local function yawOnly(cf: CFrame)
+        -- keep your position, apply only Y (yaw) rotation so the slash faces where you look
+        local p = cf.Position
+        local _, y, _ = cf:ToOrientation() -- radians
+        return CFrame.new(p) * CFrame.Angles(0, y, 0), math.deg(y)
+    end
+
+    local dismantleBtn = Instance.new("TextButton")
+    dismantleBtn.Size = UDim2.new(1, -20, 0, 60)
+    dismantleBtn.Position = UDim2.new(0, 10, 0, 0)
+    dismantleBtn.BackgroundColor3 = Color3.fromRGB(120, 50, 50)
+    dismantleBtn.TextColor3 = Color3.new(1, 1, 1)
+    dismantleBtn.TextScaled = true
+    dismantleBtn.Text = "Dismantle"
+    dismantleBtn.Parent = page4
+
+    dismantleBtn.MouseButton1Click:Connect(function()
+        local char = player.Character
+        if not char then return end
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if not hrp then return end
+
+        local cf, yawDeg = yawOnly(hrp.CFrame)
+
+        local args = {
+            "slash",
+            cf,                          -- CFrame with live position + yaw
+            vector_create(0, yawDeg, 0)  -- angle vector expected by the server
+        }
+        ReplicatedStorage:WaitForChild("Slicer"):FireServer(unpack(args))
+    end)
+end
+
+-- PAGE 5 to 6: placeholders (leave these as placeholders)
+for i = 5, 6 do
+    local page = pagesHolder:GetChildren()[i]
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Color3.fromRGB(100,100,100)
+    label.TextScaled = true
+    label.Text = "Page "..i.." - Coming Soon"
+    label.Parent = page
+end
 
 -- Current page variable
 local currentPage = 1

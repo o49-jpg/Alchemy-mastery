@@ -409,22 +409,55 @@ layout4.Padding = UDim.new(0, 10)
 layout4.SortOrder = Enum.SortOrder.LayoutOrder
 layout4.Parent = page4
 
--- Nice Cut G'
-local niceCutBtn = Instance.new("TextButton")
-niceCutBtn.Size = UDim2.new(1, -20, 0, 60)
-niceCutBtn.Position = UDim2.new(0, 10, 0, 0)
-niceCutBtn.BackgroundColor3 = Color3.fromRGB(150, 80, 150)
-niceCutBtn.TextColor3 = Color3.new(1, 1, 1)
-niceCutBtn.TextScaled = true
-niceCutBtn.Text = "Nice Cut G'"
-niceCutBtn.Parent = page4
+-- NICE CUT G'
+do
+    local niceBtn = Instance.new("TextButton")
+    niceBtn.Size = UDim2.new(1, -20, 0, 60)
+    niceBtn.Position = UDim2.new(0, 10, 0, 0)
+    niceBtn.BackgroundColor3 = Color3.fromRGB(255, 230, 80) -- yellow accent
+    niceBtn.TextColor3 = Color3.new(0, 0, 0)
+    niceBtn.TextScaled = true
+    niceBtn.Text = "Nice Cut G'"
+    niceBtn.Parent = page3 -- or wherever you placed punch modes
 
-niceCutBtn.MouseButton1Click:Connect(function()
-	local args = {
-		Players:WaitForChild("Fixa1108").Character:WaitForChild("Torso")
-	}
-	ReplicatedStorage:WaitForChild("Godshand"):FireServer(unpack(args))
-end)
+    niceBtn.MouseButton1Click:Connect(function()
+        local char = player.Character
+        if not char then return end
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if not hrp then return end
+
+        -- make hitbox part
+        local hitbox = Instance.new("Part")
+        hitbox.Size = Vector3.new(7, 4, 7)
+        hitbox.CFrame = hrp.CFrame * CFrame.new(0, 0, -4) -- spawn slightly in front
+        hitbox.Anchored = true
+        hitbox.CanCollide = false
+        hitbox.Transparency = 0.57
+        hitbox.Color = Color3.fromRGB(255, 230, 0) -- yellow
+        hitbox.Parent = workspace
+
+        local touched = {}
+        local con
+        con = hitbox.Touched:Connect(function(other)
+            local plr = game.Players:GetPlayerFromCharacter(other.Parent)
+            if plr and not touched[plr] then
+                touched[plr] = true
+                -- fire remote on their torso
+                local torso = other.Parent:FindFirstChild("Torso") or other.Parent:FindFirstChild("UpperTorso")
+                if torso then
+                    local args = { torso }
+                    ReplicatedStorage:WaitForChild("Godshand"):FireServer(unpack(args))
+                end
+            end
+        end)
+
+        -- cleanup after 0.91s
+        task.delay(0.91, function()
+            if con then con:Disconnect() end
+            if hitbox then hitbox:Destroy() end
+        end)
+    end)
+end
 
 -- Timestop
 local timestopBtn = Instance.new("TextButton")

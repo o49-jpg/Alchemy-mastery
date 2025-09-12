@@ -200,7 +200,21 @@ local abilityData = {
     {Name = "Bring", Remote = eraseRemote, Args = {}},
     {Name = "Universal Use", Remote = generalAbilityRemote, Args = {}},
     {Name = "Counter", Remote = counterRemote, Args = {}},
-
+     
+     ---TOTEM
+     {  
+    Name  = "Totem",
+    Remote = ReplicatedStorage:WaitForChild("VoodooMasteryStuff"),
+    Args  = {
+        CFrame.new(
+            -378.8648681640625, 49.541385650634766, -18.539554595947266,
+            0.1092430129647255, -4.53169013425736e-09, 0.994015097618103,
+            4.7254014035047476e-09, 1, 4.039649947884527e-09,
+            -0.994015097618103, 4.255816588027983e-09, 0.1092430129647255
+        )
+    }
+},
+     
     -- 🔹 Updated Home
     {Name = "Home", Remote = generalAbilityRemote, Args = {
         CFrame.new(-202.87875366210938, -8.178178787231445, 32.40607833862305, 
